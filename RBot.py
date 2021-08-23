@@ -1,7 +1,7 @@
-import discord, os, random, datetime, asyncio
-import requests
+import discord, os, random, datetime, asyncio, requests 
 client = discord.Client()
 random.seed()
+
 class NumbersGame:
   def setup(self):
     self.correct = []
@@ -18,14 +18,14 @@ class NumbersGame:
 
 GameState = NumbersGame()
 
-async def createMessage(channel):
+async def createNumGameMsg(channel):
   msg = "The scores are...\n"
   for entry in sorted(GameState.leaderboard.items(), key=lambda x: x[1], reverse = True):  
     msg += "{} got a score of {:.2f}.\n".format(entry[0], entry[1])
   await channel.send(msg)
   GameState.setup()
 
-async def sendme(channel):
+async def sendNumGame(channel):
   for i in range(10):
     coinToss = random.randrange(2)
     if coinToss == 0:
@@ -41,7 +41,7 @@ async def sendme(channel):
     await channel.send(msg)
     GameState.addCorrect(correctAns)
     await asyncio.sleep(15)
-  await createMessage(channel)
+  await createNumGameMsg(channel)
 
 
 @client.event
@@ -50,29 +50,31 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-  if message.content == ".help":
-    await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nType .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n(It can also tack  an extra sentence onto your text, but sentence completion is more fun 🙂)")
+  if message.author == client.user:
+    return
+
+  elif message.content == ".help":
+    await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nType .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.")
+
   elif message.content == ".numbers":
     GameState.start()
     await message.channel.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
-    await sendme(message.channel)
+    await sendNumGame(message.channel)
+
   elif message.content.startswith(".n") and len(GameState.correct) > 0:
-    timeDelta = datetime.datetime.now() - GameState.startTime
-    secs = timeDelta.total_seconds() % 15
+    timeDelta = datetime.datetime.now() - GameState.startTime # Calculating score
+    secs = timeDelta.total_seconds() % 15 
     answer = int(message.content.split()[1])
     score = 100/secs if answer == GameState.correct[-1] else 0
     GameState.addLeader(message.author.mention, score)
+
   elif message.content.startswith(".complete"):
     raw = requests.post("https://api.deepai.org/api/text-generator",
     data={
       'text': " ".join(message.content.split()[1:]),
     },
     headers={'Api-Key': os.getenv('TOKEN2')})
-    processed = raw.json()["output"].split('.')[0] + '.'
+    processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
     await message.channel.send(processed)
-
-      
-
-        
 
 client.run(os.getenv('TOKEN1'))
