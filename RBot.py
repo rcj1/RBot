@@ -1,7 +1,7 @@
 import discord, os, random, datetime, asyncio, requests 
 client = discord.Client()
 random.seed()
-
+# --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
   def setup(self):
     self.correct = []
@@ -16,8 +16,34 @@ class NumbersGame:
   def start(self):
     self.start_time = datetime.datetime.now()
 
-GameState = NumbersGame()
+async def create_numgame_msg(channel):
+  msg = "The scores are...\n"
+  for entry in sorted(GameState.leaderboard.items(), key=lambda x: x[1], reverse = True):  
+    msg += "{} got a score of {:.2f}.\n".format(entry[0], entry[1])
+  await channel.send(msg)
+  GameState.setup()
 
+async def send_numgame(channel):
+  for i in range(10):
+    coinToss = random.randrange(2)
+    if coinToss == 0:
+      rand1 = random.randrange(1, 200)
+      rand2 = random.randrange(1, 200)
+      msg = str(rand1) + " + " + str(rand2) + " =?"
+      correct_ans = rand1 + rand2
+    else:
+      rand1 = random.randrange(1, 10)
+      rand2 = random.randrange(1, 100)
+      msg = str(rand1) + " x " + str(rand2) + " =?"
+      correct_ans = rand1 * rand2
+    await channel.send(msg)
+    GameState.add_correct(correct_ans)
+    await asyncio.sleep(15)
+  await create_numgame_msg(channel)
+
+GameState = NumbersGame()
+# ---------------------------- END OF NUMBERS GAME ------------------------------
+# ---------------------------- START OF CONNECT 4 -------------------------------
 class Connect4: #standard for working with users: use the one with @!
   def setup(self, user1, user2):
     if random.randrange(2) == 0:
@@ -79,13 +105,21 @@ class Connect4: #standard for working with users: use the one with @!
               return color
             else:
               return False
-    # ------------------------ END OF HELPER 2
+    # ------------------------ END OF HELPER
     # return the color that won, and return none if nobody won
     win_or_not = winning_conditions()
     if win_or_not == "red":
       return self.red
     elif win_or_not == "yellow":
       return self.yellow
+  # ----------------------------- GETTER FUNCTIONS ----------------------
+  def get_turn(self):
+    return  self.turn
+  def get_boardID(self):
+    return  self.boardID
+  def get_emojis(self):
+    return  self.emojis 
+  # ----------------------------- END OF CONNECT4 OBJECT ----------------
       
 
 Connect4State = Connect4()
@@ -93,31 +127,7 @@ Connect4State = Connect4()
 def add_excl(string): #helper for working with users
   return "@!".join(string.split('@'))
 
-async def create_numgame_msg(channel):
-  msg = "The scores are...\n"
-  for entry in sorted(GameState.leaderboard.items(), key=lambda x: x[1], reverse = True):  
-    msg += "{} got a score of {:.2f}.\n".format(entry[0], entry[1])
-  await channel.send(msg)
-  GameState.setup()
-
-async def send_numgame(channel):
-  for i in range(10):
-    coinToss = random.randrange(2)
-    if coinToss == 0:
-      rand1 = random.randrange(1, 200)
-      rand2 = random.randrange(1, 200)
-      msg = str(rand1) + " + " + str(rand2) + " =?"
-      correct_ans = rand1 + rand2
-    else:
-      rand1 = random.randrange(1, 10)
-      rand2 = random.randrange(1, 100)
-      msg = str(rand1) + " x " + str(rand2) + " =?"
-      correct_ans = rand1 * rand2
-    await channel.send(msg)
-    GameState.add_correct(correct_ans)
-    await asyncio.sleep(15)
-  await create_numgame_msg(channel)
-
+# ------------------------------ END OF CONNECT FOUR ------------------------
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
@@ -157,14 +167,14 @@ async def on_message(message):
     msg = Connect4State.send_c4_board()
     boardID = await message.channel.send(msg)
     Connect4State.set_boardID(boardID)
-    for emoji in Connect4State.emojis:
-      await Connect4State.boardID.add_reaction(emoji)
+    for emoji in Connect4State.get_emojis():
+      await Connect4State.get_boardID().add_reaction(emoji)
 
 @client.event
 async def on_raw_reaction_add(payload):
-  if Connect4State.boardID != '': #if there's a c4 game going on...
+  if Connect4State.get_boardID() != '': #if there's a c4 game going on...
     pay_mention = add_excl(payload.member.mention)
-    if (payload.message_id == Connect4State.boardID.id) and (pay_mention == Connect4State.turn) and (payload.emoji.name in Connect4State.emojis): # if the correct person responds with a valid answer
+    if (payload.message_id == Connect4State.get_boardID().id) and (pay_mention == Connect4State.get_turn()) and (payload.emoji.name in Connect4State.get_emojis()): # if the correct person responds with a valid answer
       err_code = Connect4State.add_to_board(payload.emoji.name, pay_mention)
       if err_code == 0:# if adding the chip was successful
         Connect4State.switch_turn()
@@ -172,11 +182,12 @@ async def on_raw_reaction_add(payload):
         won = Connect4State.check_for_win()
         if won:
           new_msg = new_msg + '\n{} won!'.format(won)
-          await Connect4State.boardID.edit(content=new_msg)
+          await Connect4State.get_boardID().edit(content=new_msg)
           Connect4State.setup('', '')
         else:
           await Connect4State.boardID.edit(content=new_msg)
-    if await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.boardID != '':
-      await Connect4State.boardID.remove_reaction(payload.emoji.name, await client.fetch_user(pay_mention[3:-1]))
+    if await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.get_boardID().id == payload.message_id and Connect4State.get_boardID() != '': #if someone other than the bot adds a reaction to the connect 4 game
+      await Connect4State.get_boardID().remove_reaction(payload.emoji.name, await client.fetch_user(pay_mention[3:-1]))
+      print(payload, Connect4State.get_boardID())
 
 client.run(os.getenv('TOKEN1'))
