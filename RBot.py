@@ -88,7 +88,6 @@ class Connect4: #standard for working with users: use the one with @!
     if col_height < 6:
       self.board[col_index].append(color_emoji)
       self.win_dict[color_dict].append((col_index, col_height))
-      print(self.board, self.win_dict)
       return 0
     else: # this is an error because you can only have six chips stacked up
       return -1
@@ -109,26 +108,21 @@ class Connect4: #standard for working with users: use the one with @!
     return msg
 
   def check_for_win(self):
-    def winning_conditions():
-      # these for loops loop through all the possible locations of a chip, once for each color.
-      # Each all() statement is a winning condition.
-      # For example, if all the tuples (x, y) (x, y+1) (x, y+2) (x, y+3) are in the winning dict, that is a vertical win.
-      # There are four such statements for the four possible win situations. 
-      # These are connected with any() so that if any one is true, you return the color that won.
-      for color in ["red", "yellow"]:
-        for x in range(0, 7):
-          for y in range(0, 6):
-            if any([all(tupl in self.win_dict[color] for tupl in [(x, y), (x, y+1), (x, y+2), (x, y+3)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y), (x+2, y), (x+3, y)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y+1), (x+2, y+2), (x+3, y+3)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y-1), (x+2, y-2), (x+3, y-3)])]):
-              return color
+    # these for loops loop through all the possible locations of a chip, once for each color.
+    # Each all() statement is a winning condition.
+    # For example, if all the tuples (x, y) (x, y+1) (x, y+2) (x, y+3) are in the winning dict, that is a vertical win.
+    # There are four such statements for the four possible win situations. 
+    # These are connected with any() so that if any one is true, you return the color that won.
+    for color in ["red", "yellow"]:
+      for x in range(7):
+        for y in range(6):
+          if any([all(tupl in self.win_dict[color] for tupl in [(x, y), (x, y+1), (x, y+2), (x, y+3)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y), (x+2, y), (x+3, y)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y+1), (x+2, y+2), (x+3, y+3)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y-1), (x+2, y-2), (x+3, y-3)])]):
+            if color == "red":
+              return self.red
             else:
-              return False
-    # ------------------------ END OF HELPER
-    # return the color that won, and return none if nobody won
-    win_or_not = winning_conditions()
-    if win_or_not == "red":
-      return self.red
-    elif win_or_not == "yellow":
-      return self.yellow
+              return self.yellow
+    # return the color that won, and return None if nobody won
+
   # ----------------------------- GETTER FUNCTIONS ----------------------
   def game_on(self):
     return self.boardID != ''
