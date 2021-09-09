@@ -5,4 +5,4 @@ RBot provides fun and games in your Discord server. With period-prefix commands,
 I have this Python bot hosted as a worker on Heroku.
 
 ### What's next?
-More games. Haven't decided on the specifics yet, but I will definitely update and expand this bot.
+Error handling and better variable names. Also looking to expand the bot by adding more games and fun stuff.
