@@ -1,28 +1,30 @@
 import discord, os, random, datetime, asyncio, requests 
 client = discord.Client()
 random.seed()
+# error handling
+# we have to first ensure that someone puts a real valid user in the connect 4
 # --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
   def setup(self):
-    self.correct = []
-    self.leaderboard = {}
-    self.start_time = 0
+    self._correct = []
+    self._leaderboard = {}
+    self._start_time = 0
 
   def __init__(self):
     self.setup()
 
   def add_correct(self, num):
-    self.correct.append(num)
+    self._correct.append(num)
 
   def add_leader(self, key, value):
-    self.leaderboard[key] = value if key not in self.leaderboard else value + self.leaderboard[key]
+    self._leaderboard[key] = value if key not in self._leaderboard else value + self._leaderboard[key]
 
   def start(self):
-    self.start_time = datetime.datetime.now()
+    self._start_time = datetime.datetime.now()
 
   async def create_numgame_msg(self, channel):
     msg = "The scores are...\n"
-    for entry in sorted(self.leaderboard.items(), key=lambda x: x[1], reverse = True):  
+    for entry in sorted(self._leaderboard.items(), key=lambda x: x[1], reverse = True):  
       msg += "{} got a score of {:.2f}.\n".format(entry[0], entry[1])
     await channel.send(msg)
     self.setup()
@@ -46,11 +48,11 @@ class NumbersGame:
     await self.create_numgame_msg(channel)
   # -------------------------- GETTERS ----------------------------------------
   def game_on(self):
-    return len(self.correct) > 0
+    return len(self._correct) > 0
   def get_start_time(self):
-    return self.start_time  
+    return self._start_time  
   def get_correct(self):
-    return self.correct 
+    return self._correct 
 
 GameState = NumbersGame()
 # ---------------------------- END OF NUMBERS GAME ------------------------------
@@ -58,53 +60,53 @@ GameState = NumbersGame()
 class Connect4: #standard for working with users: use the one with @!
   def setup(self, user1, user2):
     if random.randrange(2) == 0:
-      self.red = user1
-      self.yellow = user2
+      self._red = user1
+      self._yellow = user2
     else:
-      self.red = user2
-      self.yellow = user1
+      self._red = user2
+      self._yellow = user1
     # red goes first
-    self.turn = self.red
-    self.boardID = '' # Message object that represents the board
-    self.board = [[],[],[],[],[],[],[]]
-    self.emojis =['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣']
-    self.win_dict = {"red": [], "yellow": []}
+    self._turn = self._red
+    self._boardID = '' # Message object that represents the board
+    self._board = [[],[],[],[],[],[],[]]
+    self._emojis =['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣']
+    self._win_dict = {"red": [], "yellow": []}
 
   def __init__(self):
     self.setup('', '')
 
   def switch_turn(self):
-    self.turn = self.yellow if self.turn == self.red else self.red
+    self._turn = self._yellow if self._turn == self._red else self._red
     # if the previous turn was red, the current turn is yellow and vice versa
 
   def set_boardID(self, boardID): #board ID is the message object
-    self.boardID = boardID
+    self._boardID = boardID
 
   def add_to_board(self, num_emoji, user):
-    color_emoji = '🔴' if user == self.red else '🟡'
-    color_dict = "red" if user == self.red else "yellow"
-    col_index = self.emojis.index(num_emoji) #integer representing the index of the correct column in the larger list board
-    col_height = len(self.board[col_index])
+    color_emoji = '🔴' if user == self._red else '🟡'
+    color_dict = "red" if user == self._red else "yellow"
+    col_index = self._emojis.index(num_emoji) #integer representing the index of the correct column in the larger list board
+    col_height = len(self._board[col_index])
     if col_height < 6:
-      self.board[col_index].append(color_emoji)
-      self.win_dict[color_dict].append((col_index, col_height))
+      self._board[col_index].append(color_emoji)
+      self._win_dict[color_dict].append((col_index, col_height))
       return 0
     else: # this is an error because you can only have six chips stacked up
       return -1
 
   def send_c4_board(self):
     #this prints the board
-    msg = "{}'s turn\nRed: {}\nYellow: {}\n".format(self.turn, self.red, self.yellow)
+    msg = "{}'s turn\nRed: {}\nYellow: {}\n".format(self._turn, self._red, self._yellow)
     for i in range(6, 0, -1):
       for j in range(7):
-        if len(self.board[j]) >= i:
-          msg += self.board[j][i-1]
+        if len(self._board[j]) >= i:
+          msg += self._board[j][i-1]
         else:
           msg += '◼️' # blank slots are represented with these black squares
         msg += ' '
       msg += '\n'
     for k in range(7):
-      msg += '{} '.format(self.emojis[k])
+      msg += '{} '.format(self._emojis[k])
     return msg
 
   def check_for_win(self):
@@ -116,22 +118,22 @@ class Connect4: #standard for working with users: use the one with @!
     for color in ["red", "yellow"]:
       for x in range(7):
         for y in range(6):
-          if any([all(tupl in self.win_dict[color] for tupl in [(x, y), (x, y+1), (x, y+2), (x, y+3)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y), (x+2, y), (x+3, y)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y+1), (x+2, y+2), (x+3, y+3)]), all(tupl in self.win_dict[color] for tupl in [(x, y), (x+1, y-1), (x+2, y-2), (x+3, y-3)])]):
+          if any([all(tupl in self._win_dict[color] for tupl in [(x, y), (x, y+1), (x, y+2), (x, y+3)]), all(tupl in self._win_dict[color] for tupl in [(x, y), (x+1, y), (x+2, y), (x+3, y)]), all(tupl in self._win_dict[color] for tupl in [(x, y), (x+1, y+1), (x+2, y+2), (x+3, y+3)]), all(tupl in self._win_dict[color] for tupl in [(x, y), (x+1, y-1), (x+2, y-2), (x+3, y-3)])]):
             if color == "red":
-              return self.red
+              return self._red
             else:
-              return self.yellow
+              return self._yellow
     # return the color that won, and return None if nobody won
 
   # ----------------------------- GETTER FUNCTIONS ----------------------
   def game_on(self):
-    return self.boardID != ''
+    return self._boardID != ''
   def get_turn(self):
-    return  self.turn
+    return  self._turn
   def get_boardID(self):
-    return  self.boardID
+    return  self._boardID
   def get_emojis(self):
-    return  self.emojis 
+    return  self._emojis 
   # ----------------------------- END OF CONNECT4 OBJECT ----------------
       
 
@@ -158,23 +160,30 @@ async def on_message(message):
     await message.channel.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
     await GameState.send_numgame(message.channel)
 
-  elif message.content.startswith(".n") and GameState.game_on():
+  elif message.content.startswith(".n ") and GameState.game_on():
     time_delta = datetime.datetime.now() - GameState.get_start_time() # Calculating score
-    secs = time_delta.total_seconds() % 15 
-    answer = int(message.content.split()[1])
+    secs = time_delta.total_seconds() % 15
+    try: 
+      answer = int(message.content.split()[1])
+    except ValueError:
+      message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
     score = 100/secs if answer == GameState.get_correct()[-1] else 0
     GameState.add_leader(message.author.mention, score)
   # ------------------------ SENTENCE COMPLETION -----------------------------------------
-  elif message.content.startswith(".complete"):
-    raw = requests.post("https://api.deepai.org/api/text-generator",
-    data={
-      'text': " ".join(message.content.split()[1:]),
-    },
-    headers={'Api-Key': os.getenv('TOKEN2')})
+  elif message.content.startswith(".complete "):
+    try:
+      raw = requests.post("https://api.deepai.org/api/text-generator",
+      data={
+        'text': " ".join(message.content.split()[1:]),
+      },
+      headers={'Api-Key': os.getenv('TOKEN2')})
     processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
-    await message.channel.send(processed)
+    except:
+      processed = "Please enter .complete followed by a word or sequence of words."
+    finally:
+      await message.channel.send(processed)
   # ------------------------CONNECT 4------------------------------------------------------
-  elif message.content.startswith(".connect4"): #initializing connect 4 state
+  elif message.content.startswith(".connect4 "): #initializing connect 4 state
     auth_mention = add_excl(message.author.mention)
     Connect4State.setup(auth_mention, message.content.split()[1])
     msg = Connect4State.send_c4_board()
