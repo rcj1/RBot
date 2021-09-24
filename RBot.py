@@ -1,8 +1,6 @@
 import discord, os, random, datetime, asyncio, requests 
 client = discord.Client()
 random.seed()
-# error handling
-# we have to first ensure that someone puts a real valid user in the connect 4
 # --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
   def setup(self):
@@ -142,6 +140,8 @@ Connect4State = Connect4()
 def add_excl(string): #helper for working with users
   return "@!".join(string.split('@'))
 
+class MemberError(Exception):
+  pass
 # ------------------------------ END OF CONNECT FOUR ------------------------
 @client.event
 async def on_ready():
@@ -165,11 +165,11 @@ async def on_message(message):
     secs = time_delta.total_seconds() % 15
     try: 
       answer = int(message.content.split()[1])
-    except ValueError:
+    except (ValueError, IndexError):
       await message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
-      answer = "invalid"
-    score = 100/secs if answer == GameState.get_correct()[-1] else 0
-    GameState.add_leader(message.author.mention, score)
+    else:
+      score = 100/secs if answer == GameState.get_correct()[-1] else 0
+      GameState.add_leader(message.author.mention, score)
   # ------------------------ SENTENCE COMPLETION -----------------------------------------
   elif message.content.startswith(".complete "):
     try:
@@ -179,19 +179,25 @@ async def on_message(message):
       },
       headers={'Api-Key': os.getenv('TOKEN2')})
       processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
-    except:
+    except (IndexError, AttributeError):
       processed = "Please enter .complete followed by a word or sequence of words."
     finally:
       await message.channel.send(processed)
   # ------------------------CONNECT 4------------------------------------------------------
   elif message.content.startswith(".connect4 "): #initializing connect 4 state
     auth_mention = add_excl(message.author.mention)
-    Connect4State.setup(auth_mention, message.content.split()[1])
-    msg = Connect4State.send_c4_board()
-    boardID = await message.channel.send(msg)
-    Connect4State.set_boardID(boardID)
-    for emoji in Connect4State.get_emojis():
-      await Connect4State.get_boardID().add_reaction(emoji)
+    try:
+      other_player = message.content.split()[1]
+      if other_player == auth_mention or (other_player not in [member.mention for member in message.guild.members]):
+        raise MemberError
+      Connect4State.setup(auth_mention, message.content.split()[1])
+      msg = Connect4State.send_c4_board()
+      boardID = await message.channel.send(msg)
+      Connect4State.set_boardID(boardID)
+      for emoji in Connect4State.get_emojis():
+        await Connect4State.get_boardID().add_reaction(emoji)
+    except (IndexError, MemberError):
+      await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
 
 @client.event
 async def on_raw_reaction_add(payload):
