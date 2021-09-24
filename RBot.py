@@ -177,7 +177,7 @@ async def on_message(message):
         'text': " ".join(message.content.split()[1:]),
       },
       headers={'Api-Key': os.getenv('TOKEN2')})
-    processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
+      processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
     except:
       processed = "Please enter .complete followed by a word or sequence of words."
     finally:
