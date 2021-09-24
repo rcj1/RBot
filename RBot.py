@@ -167,6 +167,7 @@ async def on_message(message):
       answer = int(message.content.split()[1])
     except ValueError:
       message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
+      answer = "invalid"
     score = 100/secs if answer == GameState.get_correct()[-1] else 0
     GameState.add_leader(message.author.mention, score)
   # ------------------------ SENTENCE COMPLETION -----------------------------------------
