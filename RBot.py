@@ -208,7 +208,7 @@ async def on_raw_reaction_add(payload):
           await Connect4State.get_boardID().edit(content=new_msg)
           Connect4State.setup('', '')
         else:
-          await Connect4State.boardID.edit(content=new_msg)
+          await Connect4State._boardID.edit(content=new_msg)
     if Connect4State.game_on() and await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.get_boardID().id == payload.message_id: #if someone other than the bot adds a reaction to the connect 4 game
       await Connect4State.get_boardID().remove_reaction(payload.emoji.name, await client.fetch_user(pay_mention[3:-1]))
 
