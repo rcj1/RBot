@@ -1,5 +1,5 @@
 ## Purpose of this bot
-RBot provides fun and games in your Discord server. With period-prefix commands, you can activate either a math game where participants compete to solve math problems, or a silly sentence completer courtesy of DeepAI's GPT-2 language model. For more detail look at the .help section of the code.
+RBot provides fun and games in your Discord server. With period-prefix commands, you can activate a connect 4 game, a funny sentence completer, and more! I am always updating and adding new features to this bot.
 
 ### Functions
 #### Number Game
