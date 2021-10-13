@@ -3,7 +3,7 @@ RBot provides fun and games in your Discord server. With period-prefix commands,
 
 ### Functions
 #### Number Game
-Type .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.
+Who can do math the fastest? Find out with this game!
 #### Message Completer
 Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.
 #### Connect 4
