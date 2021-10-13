@@ -143,6 +143,37 @@ def add_excl(string): #helper for working with users
 class MemberError(Exception):
   pass
 # ------------------------------ END OF CONNECT FOUR ------------------------
+
+# ------------------------------START OF ONE WORD ONLY ----------------------
+class OneWordOnly:
+  def setup(self):
+    self._channel = ''
+    self._word = ''
+    self._timeout_dict = {}
+
+  def __init__(self):
+    self.setup()
+
+  def set_channel(self, channel):
+    self._channel = channel
+  def get_channel(self):
+    return self._channel
+  def set_word(self, word):
+    self._word = word
+  def get_word(self):
+    return self._word
+  def add_timeout(self, timeout):
+    self._timeout_dict[timeout[0]] = timeout[1]
+  def get_timedout(self, user):
+    if user not in self._timeout_dict:
+      return False
+    time_delta = datetime.datetime.now() - self._timeout_dict[user]
+    secs = time_delta.total_seconds()
+    return secs < 20
+
+OneWordObj = OneWordOnly()
+
+# ------------------------- END OF ONE WORD ONLY ------------------------ 
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
@@ -151,7 +182,24 @@ async def on_ready():
 async def on_message(message):
   if message.author == client.user:
     return
-
+  # ---------------------- ONE WORD ONLY ------------------------------------------------
+  elif message.content.startswith(".onewordonly "):
+    if message.author.guild_permissions.administrator:
+      OneWordObj.set_channel(message.channel)
+      OneWordObj.set_word(message.content.split()[1])
+    else:
+      await message.channel.send("You don't have the authority to make this a one-word channel!")
+  elif message.content == '.remove_owo':
+    if message.author.guild_permissions.administrator:
+      OneWordObj.setup()
+    else:
+      await message.channel.send("You don't have the authority to remove a one-word channel!")
+  elif OneWordObj.get_timedout(message.author) and message.channel == OneWordObj.get_channel():
+    await message.delete()
+  elif message.channel == OneWordObj.get_channel() and message.content.lower() != OneWordObj.get_word().lower():
+    await message.channel.send("You have broken the string of {} and you will be banned from this channel for 1 hour.".format(OneWordObj.get_word()))
+    OneWordObj.add_timeout((message.author, datetime.datetime.now()))
+  # ----------------------- HELP ------------------------------------------------
   elif message.content == ".help":
     await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nType .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n\nConnect 4\n--------\n\nType .connect4 followed by a mention of someone else to start a connect 4 game with the other person.")
   # ---------------------- NUMBERS GAME ---------------------------------------------------
@@ -198,6 +246,7 @@ async def on_message(message):
         await Connect4State.get_boardID().add_reaction(emoji)
     except (IndexError, MemberError):
       await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+
 
 @client.event
 async def on_raw_reaction_add(payload):
