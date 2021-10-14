@@ -126,6 +126,9 @@ class Connect4: #standard for working with users: use the one with @!
   # ----------------------------- GETTER FUNCTIONS ----------------------
   def game_on(self):
     return self._boardID != ''
+  def full(self):
+    if len(self._win_dict['red']) + len(self._win_dict['yellow']) == 42:
+      return "Nobody"
   def get_turn(self):
     return  self._turn
   def get_boardID(self):
@@ -169,7 +172,7 @@ class OneWordOnly:
       return False
     time_delta = datetime.datetime.now() - self._timeout_dict[user]
     secs = time_delta.total_seconds()
-    return secs < 20
+    return secs < 3600
 
 OneWordObj = OneWordOnly()
 
@@ -233,19 +236,22 @@ async def on_message(message):
       await message.channel.send(processed)
   # ------------------------CONNECT 4------------------------------------------------------
   elif message.content.startswith(".connect4 "): #initializing connect 4 state
-    auth_mention = add_excl(message.author.mention)
-    try:
-      other_player = message.content.split()[1]
-      if other_player == auth_mention or (other_player not in [member.mention for member in message.guild.members]):
-        raise MemberError
-      Connect4State.setup(auth_mention, message.content.split()[1])
-      msg = Connect4State.send_c4_board()
-      boardID = await message.channel.send(msg)
-      Connect4State.set_boardID(boardID)
-      for emoji in Connect4State.get_emojis():
-        await Connect4State.get_boardID().add_reaction(emoji)
-    except (IndexError, MemberError):
-      await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+    if Connect4State.game_on():
+      await message.channel.send("You can't have two games at once.")
+    else:
+      auth_mention = add_excl(message.author.mention)
+      try:
+        other_player = message.content.split()[1]
+        if other_player == auth_mention or not other_player.startswith('<@!'):
+          raise MemberError
+        Connect4State.setup(auth_mention, message.content.split()[1])
+        msg = Connect4State.send_c4_board()
+        boardID = await message.channel.send(msg)
+        Connect4State.set_boardID(boardID)
+        for emoji in Connect4State.get_emojis():
+          await Connect4State.get_boardID().add_reaction(emoji)
+      except (IndexError, MemberError):
+        await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
 
 
 @client.event
@@ -258,8 +264,10 @@ async def on_raw_reaction_add(payload):
         Connect4State.switch_turn()
         new_msg = Connect4State.send_c4_board()
         won = Connect4State.check_for_win()
-        if won:
-          new_msg = new_msg + '\n{} won!'.format(won)
+        full = Connect4State.full()
+        if won or full:
+          winner = won if won else full
+          new_msg = new_msg + '\n{} won!'.format(winner)
           await Connect4State.get_boardID().edit(content=new_msg)
           Connect4State.setup('', '')
         else:
