@@ -3,13 +3,14 @@ client = discord.Client()
 random.seed()
 # --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
-  def setup(self):
+  def setup(self, channel):
     self._correct = []
     self._leaderboard = {}
     self._start_time = 0
+    self._channel = channel
 
-  def __init__(self):
-    self.setup()
+  def __init__(self, channel):
+    self.setup(channel)
 
   def add_correct(self, num):
     self._correct.append(num)
@@ -25,7 +26,7 @@ class NumbersGame:
     for entry in sorted(self._leaderboard.items(), key=lambda x: x[1], reverse = True):  
       msg += "{} got a score of {:.2f}.\n".format(entry[0], entry[1])
     await channel.send(msg)
-    self.setup()
+    num_game_array.remove(self)
 
   async def send_numgame(self, channel):
     for i in range(10):
@@ -45,14 +46,24 @@ class NumbersGame:
       await asyncio.sleep(15)
     await self.create_numgame_msg(channel)
   # -------------------------- GETTERS ----------------------------------------
-  def game_on(self):
-    return len(self._correct) > 0
   def get_start_time(self):
     return self._start_time  
   def get_correct(self):
     return self._correct 
+  def get_channel(self):
+    return self._channel 
 
-NumNumGameState = NumbersGame()
+num_game_array = []
+
+def find_num_game(channel):
+  for game in num_game_array:
+    if game.get_channel() == channel:
+      return game
+  return 0
+
+def new_num_game():
+  num_game_array.append(NumbersGame())
+  return num_game_array[-1]
 # ---------------------------- END OF NUMBERS GAME ------------------------------
 # ---------------------------- START OF CONNECT 4 -------------------------------
 class Connect4: #standard for working with users: use the one with @!
@@ -124,8 +135,6 @@ class Connect4: #standard for working with users: use the one with @!
     # return the color that won, and return None if nobody won
 
   # ----------------------------- GETTER FUNCTIONS ----------------------
-  def game_on(self):
-    return self._boardID != ''
   def full(self):
     if len(self._win_dict['red']) + len(self._win_dict['yellow']) == 42:
       return "Nobody"
@@ -219,20 +228,23 @@ async def on_message(message):
     await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nType .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n\nConnect 4\n--------\n\nType .connect4 followed by a mention of someone else to start a connect 4 game with the other person.")
   # ---------------------- NUMBERS GAME ---------------------------------------------------
   elif message.content == ".numbers":
+    NumGameState = new_num_game(message.channel)
     NumGameState.start()
     await message.channel.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
     await NumGameState.send_numgame(message.channel)
 
-  elif message.content.startswith(".n ") and NumGameState.game_on():
-    time_delta = datetime.datetime.now() - NumGameState.get_start_time() # Calculating score
-    secs = time_delta.total_seconds() % 15
-    try: 
-      answer = int(message.content.split()[1])
-    except (ValueError, IndexError):
-      await message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
-    else:
-      score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
-      NumGameState.add_leader(message.author.mention, score)
+  elif message.content.startswith(".n "):
+    NumGameState = find_num_game(message.channel)
+    if NumGameState:
+      time_delta = datetime.datetime.now() - NumGameState.get_start_time() # Calculating score
+      secs = time_delta.total_seconds() % 15
+      try: 
+        answer = int(message.content.split()[1])
+      except (ValueError, IndexError):
+        await message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
+      else:
+        score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
+        NumGameState.add_leader(message.author.mention, score)
   # ------------------------ SENTENCE COMPLETION -----------------------------------------
   elif message.content.startswith(".complete "):
     try:
@@ -283,7 +295,7 @@ async def on_raw_reaction_add(payload):
           C4_array.remove(Connect4State)
         else:
           await Connect4State._boardID.edit(content=new_msg)
-    if Connect4State.game_on() and await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.get_boardID().id == payload.message_id: #if someone other than the bot adds a reaction to the connect 4 game
+    if Connect4State and await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.get_boardID().id == payload.message_id: #if someone other than the bot adds a reaction to the connect 4 game
       await Connect4State.get_boardID().remove_reaction(payload.emoji.name, await client.fetch_user(pay_mention[3:-1]))
 
 client.run(os.getenv('TOKEN1'))
