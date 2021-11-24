@@ -52,7 +52,7 @@ class NumbersGame:
   def get_correct(self):
     return self._correct 
 
-GameState = NumbersGame()
+NumNumGameState = NumbersGame()
 # ---------------------------- END OF NUMBERS GAME ------------------------------
 # ---------------------------- START OF CONNECT 4 -------------------------------
 class Connect4: #standard for working with users: use the one with @!
@@ -137,8 +137,17 @@ class Connect4: #standard for working with users: use the one with @!
     return  self._emojis 
   # ----------------------------- END OF CONNECT4 OBJECT ----------------
       
+C4_array = []
 
-Connect4State = Connect4()
+def find_game_c4(payload):
+  for game in C4_array:
+    if (payload.message_id == game.get_boardID().id):
+      return game
+  return 0
+
+def new_game_c4():
+  C4_array.append(Connect4())
+  return C4_array[-1]
 
 def add_excl(string): #helper for working with users
   return "@!".join(string.split('@'))
@@ -148,33 +157,33 @@ class MemberError(Exception):
 # ------------------------------ END OF CONNECT FOUR ------------------------
 
 # ------------------------------START OF ONE WORD ONLY ----------------------
-class OneWordOnly:
-  def setup(self):
-    self._channel = ''
-    self._word = ''
-    self._timeout_dict = {}
+# class OneWordOnly:
+#   def setup(self):
+#     self._channel = ''
+#     self._word = ''
+#     self._timeout_dict = {}
 
-  def __init__(self):
-    self.setup()
+#   def __init__(self):
+#     self.setup()
 
-  def set_channel(self, channel):
-    self._channel = channel
-  def get_channel(self):
-    return self._channel
-  def set_word(self, word):
-    self._word = word
-  def get_word(self):
-    return self._word
-  def add_timeout(self, timeout):
-    self._timeout_dict[timeout[0]] = timeout[1]
-  def get_timedout(self, user):
-    if user not in self._timeout_dict:
-      return False
-    time_delta = datetime.datetime.now() - self._timeout_dict[user]
-    secs = time_delta.total_seconds()
-    return secs < 3600
+#   def set_channel(self, channel):
+#     self._channel = channel
+#   def get_channel(self):
+#     return self._channel
+#   def set_word(self, word):
+#     self._word = word
+#   def get_word(self):
+#     return self._word
+#   def add_timeout(self, timeout):
+#     self._timeout_dict[timeout[0]] = timeout[1]
+#   def get_timedout(self, user):
+#     if user not in self._timeout_dict:
+#       return False
+#     time_delta = datetime.datetime.now() - self._timeout_dict[user]
+#     secs = time_delta.total_seconds()
+#     return secs < 3600
 
-OneWordObj = OneWordOnly()
+# OneWordObj = OneWordOnly()
 
 # ------------------------- END OF ONE WORD ONLY ------------------------ 
 @client.event
@@ -186,41 +195,44 @@ async def on_message(message):
   if message.author == client.user:
     return
   # ---------------------- ONE WORD ONLY ------------------------------------------------
-  elif message.content.startswith(".onewordonly "):
-    if message.author.guild_permissions.administrator:
-      OneWordObj.set_channel(message.channel)
-      OneWordObj.set_word(message.content.split()[1])
-    else:
-      await message.channel.send("You don't have the authority to make this a one-word channel!")
-  elif message.content == '.remove_owo':
-    if message.author.guild_permissions.administrator:
-      OneWordObj.setup()
-    else:
-      await message.channel.send("You don't have the authority to remove a one-word channel!")
-  elif OneWordObj.get_timedout(message.author) and message.channel == OneWordObj.get_channel():
-    await message.delete()
-  elif message.channel == OneWordObj.get_channel() and message.content.lower() != OneWordObj.get_word().lower():
-    await message.channel.send("You have broken the string of {} and you will be banned from this channel for 1 hour.".format(OneWordObj.get_word()))
-    OneWordObj.add_timeout((message.author, datetime.datetime.now()))
+  # elif message.content.startswith(".onewordonly "):
+  #   if message.author.guild_permissions.administrator:
+  #     OneWordObj.set_channel(message.channel)
+  #     OneWordObj.set_word(message.content.split()[1])
+  #   else:
+  #     await message.channel.send("You don't have the authority to make this a one-word channel!")
+  # elif message.content == '.remove_owo':
+  #   if message.author.guild_permissions.administrator:
+  #     OneWordObj.setup()
+  #   else:
+  #     await message.channel.send("You don't have the authority to remove a one-word channel!")
+  # elif OneWordObj.get_timedout(message.author) and message.channel == OneWordObj.get_channel():
+  #   await message.delete()
+  # elif message.channel == OneWordObj.get_channel() and message.content.lower() != OneWordObj.get_word().lower():
+  #   await message.channel.send("You have broken the string of {} and you will be banned from this channel for 1 hour.".format(OneWordObj.get_word()))
+  #   OneWordObj.add_timeout((message.author, datetime.datetime.now()))
   # ----------------------- HELP ------------------------------------------------
   elif message.content == ".help":
+    mem = message.guild.members
+    for member in mem:
+      await message.channel.send(member)
     await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nType .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n\nConnect 4\n--------\n\nType .connect4 followed by a mention of someone else to start a connect 4 game with the other person.")
   # ---------------------- NUMBERS GAME ---------------------------------------------------
   elif message.content == ".numbers":
-    GameState.start()
+    NumGameState.start()
     await message.channel.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
-    await GameState.send_numgame(message.channel)
+    await NumGameState.send_numgame(message.channel)
 
-  elif message.content.startswith(".n ") and GameState.game_on():
-    time_delta = datetime.datetime.now() - GameState.get_start_time() # Calculating score
+  elif message.content.startswith(".n ") and NumGameState.game_on():
+    time_delta = datetime.datetime.now() - NumGameState.get_start_time() # Calculating score
     secs = time_delta.total_seconds() % 15
     try: 
       answer = int(message.content.split()[1])
     except (ValueError, IndexError):
       await message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
     else:
-      score = 100/secs if answer == GameState.get_correct()[-1] else 0
-      GameState.add_leader(message.author.mention, score)
+      score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
+      NumGameState.add_leader(message.author.mention, score)
   # ------------------------ SENTENCE COMPLETION -----------------------------------------
   elif message.content.startswith(".complete "):
     try:
@@ -236,29 +248,28 @@ async def on_message(message):
       await message.channel.send(processed)
   # ------------------------CONNECT 4------------------------------------------------------
   elif message.content.startswith(".connect4 "): #initializing connect 4 state
-    if Connect4State.game_on():
-      await message.channel.send("You can't have two games at once.")
-    else:
-      auth_mention = add_excl(message.author.mention)
-      try:
-        other_player = message.content.split()[1]
-        if other_player == auth_mention or not other_player.startswith('<@!'):
-          raise MemberError
-        Connect4State.setup(auth_mention, message.content.split()[1])
-        msg = Connect4State.send_c4_board()
-        boardID = await message.channel.send(msg)
-        Connect4State.set_boardID(boardID)
-        for emoji in Connect4State.get_emojis():
-          await Connect4State.get_boardID().add_reaction(emoji)
-      except (IndexError, MemberError):
-        await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+    auth_mention = add_excl(message.author.mention)
+    try:
+      other_player = message.content.split()[1]
+      if other_player == auth_mention or not other_player.startswith('<@!'):
+        raise MemberError
+      Connect4State = new_game_c4()
+      Connect4State.setup(auth_mention, message.content.split()[1])
+      msg = Connect4State.send_c4_board()
+      boardID = await message.channel.send(msg)
+      Connect4State.set_boardID(boardID)
+      for emoji in Connect4State.get_emojis():
+        await Connect4State.get_boardID().add_reaction(emoji)
+    except (IndexError, MemberError):
+      await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
 
 
 @client.event
 async def on_raw_reaction_add(payload):
-  if Connect4State.game_on(): #if there's a c4 game going on...
+  Connect4State = find_game_c4(payload)
+  if Connect4State: #if there's a c4 game going on...
     pay_mention = add_excl(payload.member.mention)
-    if (payload.message_id == Connect4State.get_boardID().id) and (pay_mention == Connect4State.get_turn()) and (payload.emoji.name in Connect4State.get_emojis()): # if the correct person responds with a valid answer
+    if (pay_mention == Connect4State.get_turn()) and (payload.emoji.name in Connect4State.get_emojis()): # if the correct person responds with a valid answer
       err_code = Connect4State.add_to_board(payload.emoji.name, pay_mention)
       if err_code == 0:# if adding the chip was successful
         Connect4State.switch_turn()
@@ -269,7 +280,7 @@ async def on_raw_reaction_add(payload):
           winner = won if won else full
           new_msg = new_msg + '\n{} won!'.format(winner)
           await Connect4State.get_boardID().edit(content=new_msg)
-          Connect4State.setup('', '')
+          C4_array.remove(Connect4State)
         else:
           await Connect4State._boardID.edit(content=new_msg)
     if Connect4State.game_on() and await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.get_boardID().id == payload.message_id: #if someone other than the bot adds a reaction to the connect 4 game
