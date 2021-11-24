@@ -62,7 +62,7 @@ def find_num_game(channel):
   return 0
 
 def new_num_game(channel):
-  num_game_array.append(NumbersGame())
+  num_game_array.append(NumbersGame(channel))
   return num_game_array[-1]
 # ---------------------------- END OF NUMBERS GAME ------------------------------
 # ---------------------------- START OF CONNECT 4 -------------------------------
