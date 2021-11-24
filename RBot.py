@@ -61,7 +61,7 @@ def find_num_game(channel):
       return game
   return 0
 
-def new_num_game():
+def new_num_game(channel):
   num_game_array.append(NumbersGame())
   return num_game_array[-1]
 # ---------------------------- END OF NUMBERS GAME ------------------------------
