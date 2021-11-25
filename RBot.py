@@ -1,12 +1,14 @@
 import discord, os, random, datetime, asyncio, requests 
-client = discord.Client()
+intents = discord.Intents.default()
+intents.members = True
+client = discord.Client(intents=intents)
 random.seed()
 # --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
   def setup(self, channel):
     self._correct = []
     self._leaderboard = {}
-    self._start_time = 0
+    self._last_time = 0
     self._channel = channel
 
   def __init__(self, channel):
@@ -18,13 +20,10 @@ class NumbersGame:
   def add_leader(self, key, value):
     self._leaderboard[key] = value if key not in self._leaderboard else value + self._leaderboard[key]
 
-  def start(self):
-    self._start_time = datetime.datetime.now()
-
   async def create_numgame_msg(self, channel):
     msg = "The scores are...\n"
     for entry in sorted(self._leaderboard.items(), key=lambda x: x[1], reverse = True):  
-      msg += "{} got a score of {:.2f}.\n".format(entry[0], entry[1])
+      msg += "{} got a score of {:.1f}.\n".format(entry[0], entry[1])
     await channel.send(msg)
     num_game_array.remove(self)
 
@@ -42,12 +41,13 @@ class NumbersGame:
         msg = str(rand1) + " x " + str(rand2) + " =?"
         correct_ans = rand1 * rand2
       await channel.send(msg)
+      self._last_time = datetime.datetime.now()
       self.add_correct(correct_ans)
       await asyncio.sleep(15)
     await self.create_numgame_msg(channel)
   # -------------------------- GETTERS ----------------------------------------
-  def get_start_time(self):
-    return self._start_time  
+  def get_last_time(self):
+    return self._last_time
   def get_correct(self):
     return self._correct 
   def get_channel(self):
@@ -197,6 +197,7 @@ class MemberError(Exception):
 # ------------------------- END OF ONE WORD ONLY ------------------------ 
 @client.event
 async def on_ready():
+
   print('We have logged in as {0.user}'.format(client))
 
 @client.event
@@ -222,22 +223,20 @@ async def on_message(message):
   #   OneWordObj.add_timeout((message.author, datetime.datetime.now()))
   # ----------------------- HELP ------------------------------------------------
   elif message.content == ".help":
-    mem = message.guild.members
-    for member in mem:
-      await message.channel.send(member)
-    await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nType .numbers to start a number game. You will be given ten arithmetic questions with 15 seconds to solve each one. Whoever gets the most questions right in the least amount of time wins. Specifically, your score for each question is 0 if you answer incorrectly, and 100/response time (seconds) if you answer correctly. The scores for each question are then summed.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n\nConnect 4\n--------\n\nType .connect4 followed by a mention of someone else to start a connect 4 game with the other person.")
+    guild = message.guild
+    print(guild, type(guild), message.author.id, guild.get_member(message.author.id))
+    await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nFind out who is the fastest at math! Type .numbers to start.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n\nConnect 4\n--------\n\nType .connect4 followed by a mention of someone else to start a connect 4 game with the other person.")
   # ---------------------- NUMBERS GAME ---------------------------------------------------
   elif message.content == ".numbers":
     NumGameState = new_num_game(message.channel)
-    NumGameState.start()
     await message.channel.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
     await NumGameState.send_numgame(message.channel)
 
   elif message.content.startswith(".n "):
     NumGameState = find_num_game(message.channel)
     if NumGameState:
-      time_delta = datetime.datetime.now() - NumGameState.get_start_time() # Calculating score
-      secs = time_delta.total_seconds() % 15
+      time_delta = datetime.datetime.now() - NumGameState.get_last_time() # Calculating score
+      secs = time_delta.total_seconds()
       try: 
         answer = int(message.content.split()[1])
       except (ValueError, IndexError):
@@ -263,7 +262,7 @@ async def on_message(message):
     auth_mention = add_excl(message.author.mention)
     try:
       other_player = message.content.split()[1]
-      if other_player == auth_mention or not other_player.startswith('<@!'):
+      if other_player == auth_mention or not message.guild.get_member(int(other_player[3:-1])):
         raise MemberError
       Connect4State = new_game_c4()
       Connect4State.setup(auth_mention, message.content.split()[1])
