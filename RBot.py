@@ -1,4 +1,5 @@
-import discord, os, random, datetime, asyncio, requests 
+import discord, os, random, datetime, asyncio, requests, io, aiohttp
+
 intents = discord.Intents.default()
 intents.members = True
 client = discord.Client(intents=intents)
@@ -223,9 +224,12 @@ async def on_message(message):
   #   OneWordObj.add_timeout((message.author, datetime.datetime.now()))
   # ----------------------- HELP ------------------------------------------------
   elif message.content == ".help":
-    guild = message.guild
-    print(guild, type(guild), message.author.id, guild.get_member(message.author.id))
-    await message.channel.send("Hi, I'm RBot and I do a few fun things in Discord.\n\nNumber Game\n--------\n\nFind out who is the fastest at math! Type .numbers to start.\n\nMessage Completer\n--------\n\nType .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.\n\nConnect 4\n--------\n\nType .connect4 followed by a mention of someone else to start a connect 4 game with the other person.")
+    embedVar = discord.Embed(title="Hi, I'm RBot and I do a few fun things in Discord.")
+    embedVar.add_field(name="Number Game", value="Find out who is the fastest at math! Type .numbers to start.", inline=False)
+    embedVar.add_field(name="Message Completer", value="Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.", inline=False)
+    embedVar.add_field(name="Connect 4", value="Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.", inline=False)
+    embedVar.add_field(name="Inspirobot", value="Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.", inline=False)
+    await message.channel.send(embed=embedVar)
   # ---------------------- NUMBERS GAME ---------------------------------------------------
   elif message.content == ".numbers":
     NumGameState = new_num_game(message.channel)
@@ -273,7 +277,16 @@ async def on_message(message):
         await Connect4State.get_boardID().add_reaction(emoji)
     except (IndexError, MemberError):
       await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
-
+  elif message.content == ".inspirobot":
+    link = "https://inspirobot.me/api?generate=true"
+    f = requests.get(link)
+    imgurl=f.text
+    async with aiohttp.ClientSession() as session:
+      async with session.get(imgurl) as resp:
+        if resp.status != 200:
+            return await message.channel.send('Could not download file...')
+        data = io.BytesIO(await resp.read())
+        await message.channel.send(file=discord.File(data, 'cool_image.png'))
 
 @client.event
 async def on_raw_reaction_add(payload):
