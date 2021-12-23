@@ -30,6 +30,7 @@ class NumbersGame:
 
   async def send_numgame(self, channel):
     for i in range(10):
+      leader_old = self._leaderboard.copy()
       coinToss = random.randrange(2)
       if coinToss == 0:
         rand1 = random.randrange(1, 200)
@@ -45,6 +46,11 @@ class NumbersGame:
       self._last_time = datetime.datetime.now()
       self.add_correct(correct_ans)
       await asyncio.sleep(15)
+      leader_new = self._leaderboard.copy()
+      if leader_new == leader_old:
+        print(leader_new, leader_old)
+        await channel.send("Timing out because nobody responded...")
+        break
     await self.create_numgame_msg(channel)
   # -------------------------- GETTERS ----------------------------------------
   def get_last_time(self):
@@ -277,6 +283,7 @@ async def on_message(message):
         await Connect4State.get_boardID().add_reaction(emoji)
     except (IndexError, MemberError):
       await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+#----------------------- INSPIROBOT ----------------------------------------------  
   elif message.content == ".inspirobot":
     link = "https://inspirobot.me/api?generate=true"
     f = requests.get(link)
@@ -287,6 +294,8 @@ async def on_message(message):
             return await message.channel.send('Could not download file...')
         data = io.BytesIO(await resp.read())
         await message.channel.send(file=discord.File(data, 'cool_image.png'))
+# ---------------------- ADMIN STUFF ---------------------------------------------
+  elif message.content.startswith(".deactivat")
 
 @client.event
 async def on_raw_reaction_add(payload):
