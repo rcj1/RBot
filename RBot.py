@@ -1,8 +1,8 @@
 import discord, os, random, datetime, asyncio, requests, io, aiohttp
-
+from discord.ext import commands
 intents = discord.Intents.default()
 intents.members = True
-client = discord.Client(intents=intents)
+bot = commands.Bot(command_prefix='.', intents=intents)
 random.seed()
 # --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
@@ -48,7 +48,7 @@ class NumbersGame:
       await asyncio.sleep(15)
       leader_new = self._leaderboard.copy()
       if leader_new == leader_old:
-        print(leader_new, leader_old)
+    
         await channel.send("Timing out because nobody responded...")
         break
     await self.create_numgame_msg(channel)
@@ -170,134 +170,97 @@ def add_excl(string): #helper for working with users
 
 class MemberError(Exception):
   pass
-# ------------------------------ END OF CONNECT FOUR ------------------------
 
-# ------------------------------START OF ONE WORD ONLY ----------------------
-# class OneWordOnly:
-#   def setup(self):
-#     self._channel = ''
-#     self._word = ''
-#     self._timeout_dict = {}
-
-#   def __init__(self):
-#     self.setup()
-
-#   def set_channel(self, channel):
-#     self._channel = channel
-#   def get_channel(self):
-#     return self._channel
-#   def set_word(self, word):
-#     self._word = word
-#   def get_word(self):
-#     return self._word
-#   def add_timeout(self, timeout):
-#     self._timeout_dict[timeout[0]] = timeout[1]
-#   def get_timedout(self, user):
-#     if user not in self._timeout_dict:
-#       return False
-#     time_delta = datetime.datetime.now() - self._timeout_dict[user]
-#     secs = time_delta.total_seconds()
-#     return secs < 3600
-
-# OneWordObj = OneWordOnly()
-
-# ------------------------- END OF ONE WORD ONLY ------------------------ 
-@client.event
+@bot.event
 async def on_ready():
 
-  print('We have logged in as {0.user}'.format(client))
+  print('We have logged in as {0.user}'.format(bot))
 
-@client.event
+@bot.event
 async def on_message(message):
-  if message.author == client.user:
+  if message.author == bot.user:
     return
-  # ---------------------- ONE WORD ONLY ------------------------------------------------
-  # elif message.content.startswith(".onewordonly "):
-  #   if message.author.guild_permissions.administrator:
-  #     OneWordObj.set_channel(message.channel)
-  #     OneWordObj.set_word(message.content.split()[1])
-  #   else:
-  #     await message.channel.send("You don't have the authority to make this a one-word channel!")
-  # elif message.content == '.remove_owo':
-  #   if message.author.guild_permissions.administrator:
-  #     OneWordObj.setup()
-  #   else:
-  #     await message.channel.send("You don't have the authority to remove a one-word channel!")
-  # elif OneWordObj.get_timedout(message.author) and message.channel == OneWordObj.get_channel():
-  #   await message.delete()
-  # elif message.channel == OneWordObj.get_channel() and message.content.lower() != OneWordObj.get_word().lower():
-  #   await message.channel.send("You have broken the string of {} and you will be banned from this channel for 1 hour.".format(OneWordObj.get_word()))
-  #   OneWordObj.add_timeout((message.author, datetime.datetime.now()))
-  # ----------------------- HELP ------------------------------------------------
-  elif message.content == ".help":
-    embedVar = discord.Embed(title="Hi, I'm RBot and I do a few fun things in Discord.")
-    embedVar.add_field(name="Number Game", value="Find out who is the fastest at math! Type .numbers to start.", inline=False)
-    embedVar.add_field(name="Message Completer", value="Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.", inline=False)
-    embedVar.add_field(name="Connect 4", value="Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.", inline=False)
-    embedVar.add_field(name="Inspirobot", value="Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.", inline=False)
-    await message.channel.send(embed=embedVar)
-  # ---------------------- NUMBERS GAME ---------------------------------------------------
-  elif message.content == ".numbers":
-    NumGameState = new_num_game(message.channel)
-    await message.channel.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
-    await NumGameState.send_numgame(message.channel)
+  await bot.process_commands(message)
+ 
+bot.remove_command("help")
+@bot.command()
+async def help(ctx):
+  embedVar = discord.Embed(title="Hi, I'm RBot and I do a few fun things in Discord.")
+  embedVar.add_field(name="Number Game", value="Find out who is the fastest at math! Type .numbers to start.", inline=False)
+  embedVar.add_field(name="Message Completer", value="Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.", inline=False)
+  embedVar.add_field(name="Connect 4", value="Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.", inline=False)
+  embedVar.add_field(name="Inspirobot", value="Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.", inline=False)
+  await ctx.send(embed=embedVar)
+ 
+@bot.command()
+async def numbers(ctx):
+  NumGameState = new_num_game(ctx.message.channel)
+  await ctx.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
+  await NumGameState.send_numgame(ctx.message.channel)
 
-  elif message.content.startswith(".n "):
-    NumGameState = find_num_game(message.channel)
-    if NumGameState:
-      time_delta = datetime.datetime.now() - NumGameState.get_last_time() # Calculating score
-      secs = time_delta.total_seconds()
-      try: 
-        answer = int(message.content.split()[1])
-      except (ValueError, IndexError):
-        await message.channel.send("Please enter .n followed by a numerical answer (only digits please).")
-      else:
-        score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
-        NumGameState.add_leader(message.author.mention, score)
-  # ------------------------ SENTENCE COMPLETION -----------------------------------------
-  elif message.content.startswith(".complete "):
-    try:
-      raw = requests.post("https://api.deepai.org/api/text-generator",
-      data={
-        'text': " ".join(message.content.split()[1:]),
-      },
-      headers={'Api-Key': os.getenv('TOKEN2')})
-      processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
-    except (IndexError, AttributeError):
-      processed = "Please enter .complete followed by a word or sequence of words."
-    finally:
-      await message.channel.send(processed)
-  # ------------------------CONNECT 4------------------------------------------------------
-  elif message.content.startswith(".connect4 "): #initializing connect 4 state
-    auth_mention = add_excl(message.author.mention)
-    try:
-      other_player = message.content.split()[1]
-      if other_player == auth_mention or not message.guild.get_member(int(other_player[3:-1])):
-        raise MemberError
-      Connect4State = new_game_c4()
-      Connect4State.setup(auth_mention, message.content.split()[1])
-      msg = Connect4State.send_c4_board()
-      boardID = await message.channel.send(msg)
-      Connect4State.set_boardID(boardID)
-      for emoji in Connect4State.get_emojis():
-        await Connect4State.get_boardID().add_reaction(emoji)
-    except (IndexError, MemberError):
-      await message.channel.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
-#----------------------- INSPIROBOT ----------------------------------------------  
-  elif message.content == ".inspirobot":
+@bot.command()
+async def n(ctx):
+  NumGameState = find_num_game(ctx.message.channel)
+  if NumGameState:
+    time_delta = datetime.datetime.now() - NumGameState.get_last_time() # Calculating score
+    secs = time_delta.total_seconds()
+    try: 
+      answer = int(ctx.message.content.split()[1])
+    except (ValueError, IndexError):
+      await ctx.send("Please enter .n followed by a numerical answer (only digits please).")
+    else:
+      score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
+      NumGameState.add_leader(ctx.message.author.mention, score)
+
+@bot.command()
+async def complete(ctx):
+  try:
+    raw = requests.post("https://api.deepai.org/api/text-generator",
+    data={
+      'text': " ".join(ctx.message.content.split()[1:]),
+    },
+    headers={'Api-Key': os.getenv('TOKEN2')})
+    processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
+  except (IndexError, AttributeError, KeyError):
+    processed = "Please enter .complete followed by a word or sequence of words."
+  finally:
+    await ctx.send(processed)
+
+@bot.command()
+async def connect4(ctx): #initializing connect 4 state
+  auth_mention = add_excl(ctx.message.author.mention)
+  try:
+    other_player = ctx.message.content.split()[1]
+    if other_player == auth_mention or not ctx.message.guild.get_member(int(other_player[3:-1])):
+      raise MemberError
+    Connect4State = new_game_c4()
+    Connect4State.setup(auth_mention, other_player)
+    msg = Connect4State.send_c4_board()
+    boardID = await ctx.send(msg)
+    Connect4State.set_boardID(boardID)
+    for emoji in Connect4State.get_emojis():
+      await Connect4State.get_boardID().add_reaction(emoji)
+  except (IndexError, MemberError, ValueError):
+    await ctx.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+# #----------------------- INSPIROBOT ----------------------------------------------  
+
+@bot.command()
+async def inspirobot(ctx):
     link = "https://inspirobot.me/api?generate=true"
     f = requests.get(link)
     imgurl=f.text
     async with aiohttp.ClientSession() as session:
       async with session.get(imgurl) as resp:
         if resp.status != 200:
-            return await message.channel.send('Could not download file...')
+            return await ctx.send('Could not download file...')
         data = io.BytesIO(await resp.read())
-        await message.channel.send(file=discord.File(data, 'cool_image.png'))
-# ---------------------- ADMIN STUFF ---------------------------------------------
-  elif message.content.startswith(".deactivat")
+        await ctx.send(file=discord.File(data, 'cool_image.png'))
+# # ---------------------- ADMIN STUFF ---------------------------------------------
+#   elif message.content.startswith(".deactivat"):
+#     pass
+#   await bot.process_commands(message)
 
-@client.event
+@bot.event
 async def on_raw_reaction_add(payload):
   Connect4State = find_game_c4(payload)
   if Connect4State: #if there's a c4 game going on...
@@ -316,7 +279,7 @@ async def on_raw_reaction_add(payload):
           C4_array.remove(Connect4State)
         else:
           await Connect4State._boardID.edit(content=new_msg)
-    if Connect4State and await client.fetch_user(pay_mention[3:-1]) != client.user and Connect4State.get_boardID().id == payload.message_id: #if someone other than the bot adds a reaction to the connect 4 game
-      await Connect4State.get_boardID().remove_reaction(payload.emoji.name, await client.fetch_user(pay_mention[3:-1]))
+    if Connect4State and await bot.fetch_user(pay_mention[3:-1]) != bot.user and Connect4State.get_boardID().id == payload.message_id: #if someone other than the bot adds a reaction to the connect 4 game
+      await Connect4State.get_boardID().remove_reaction(payload.emoji.name, await bot.fetch_user(pay_mention[3:-1]))
 
-client.run(os.getenv('TOKEN1'))
+bot.run(os.getenv('TOKEN1'))
