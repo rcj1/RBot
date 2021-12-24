@@ -260,7 +260,7 @@ async def main():
   print('hello1')
   conn = await asyncpg.connect(database_url)
   print('hello2')
-  row = await conn.fetchrow("SELECT * FROM servers WHERE id = '$'1''")
+  row = await conn.fetchrow("SELECT * FROM servers WHERE id = $1", "1")
   print(row)
   await conn.close()
 
