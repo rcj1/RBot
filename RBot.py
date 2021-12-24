@@ -258,8 +258,7 @@ async def inspirobot(ctx):
 async def main():
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
-  row = await conn.fetchrow(
-      'SELECT * FROM servers WHERE id = '1'')
+  row = await conn.fetchrow('SELECT * FROM servers WHERE id = '1'')
   print(row)
   await conn.close()
 
