@@ -1,4 +1,4 @@
-import discord, os, random, datetime, asyncio, requests, io, aiohttp
+import discord, os, random, datetime, asyncio, requests, io, aiohttp, asyncpg 
 from discord.ext import commands
 intents = discord.Intents.default()
 intents.members = True
@@ -173,7 +173,6 @@ class MemberError(Exception):
 
 @bot.event
 async def on_ready():
-
   print('We have logged in as {0.user}'.format(bot))
 
 @bot.event
@@ -255,6 +254,16 @@ async def inspirobot(ctx):
             return await ctx.send('Could not download file...')
         data = io.BytesIO(await resp.read())
         await ctx.send(file=discord.File(data, 'cool_image.png'))
+
+async def main():
+  database_url = os.environ.get('DATABASE_URL', None)
+  conn = await asyncpg.connect(database_url)
+  row = await conn.fetchrow(
+      'SELECT * FROM servers WHERE id = '1'')
+  print(row)
+  await conn.close()
+
+asyncio.get_event_loop().run_until_complete(main())
 # # ---------------------- ADMIN STUFF ---------------------------------------------
 #   elif message.content.startswith(".deactivat"):
 #     pass
