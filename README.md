@@ -8,9 +8,11 @@ Who can do math the fastest? Find out with this game!
 Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.
 #### Connect 4
 Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.
+#### Inspirobot
+Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.
 
 ### Code
-I have this Python bot hosted as a worker on Heroku.
+This bot is written in Python and hosted on Heroku.
 
 ### What's next?
-A function that allows you to restrict a channel to only one word: like the counting bot but better!
+The ability for admins to disable selected features.
