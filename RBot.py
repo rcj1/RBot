@@ -269,9 +269,7 @@ async def deactivate(ctx):
   conn = await asyncpg.connect(database_url)
   await conn.execute('UPDATE servers SET forbidden=$2 WHERE id=$1', current_server, array_append(forbidden, comm_to_deactivate))
   await conn.close()
-
-asyncio.get_event_loop().run_until_complete(main())
-
+  
 @bot.event
 async def on_raw_reaction_add(payload):
   Connect4State = find_game_c4(payload)
