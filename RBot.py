@@ -4,6 +4,7 @@ intents = discord.Intents.default()
 intents.members = True
 bot = commands.Bot(command_prefix='.', intents=intents)
 random.seed()
+non_admin_commands = ["numbers", "complete", "connect4", "inspirobot"]
 # --------------------------------- START OF NUMBERS GAME -----------------------------------
 class NumbersGame:
   def setup(self, channel):
@@ -255,20 +256,21 @@ async def inspirobot(ctx):
         data = io.BytesIO(await resp.read())
         await ctx.send(file=discord.File(data, 'cool_image.png'))
 
-async def main():
+@bot.command()
+async def deactivate(ctx):
+  current_server = ctx.message.guild
+  ctx.send(current_server)
+  print(current_server  )
+  comm_to_deactivate = ctx.message.content.split()[1]
+  if comm_to_deactivate not in non_admin_commands:
+    await ctx.send("Sorry you cannot deactivate this command.")
+    return
   database_url = os.environ.get('DATABASE_URL', None)
-  print('hello1')
   conn = await asyncpg.connect(database_url)
-  print('hello2')
-  row = await conn.fetchrow("SELECT * FROM servers WHERE id = $1", "1")
-  print(row)
+  await conn.execute('UPDATE servers SET forbidden=$2 WHERE id=$1', current_server, array_append(forbidden, comm_to_deactivate))
   await conn.close()
 
 asyncio.get_event_loop().run_until_complete(main())
-# # ---------------------- ADMIN STUFF ---------------------------------------------
-#   elif message.content.startswith(".deactivat"):
-#     pass
-#   await bot.process_commands(message)
 
 @bot.event
 async def on_raw_reaction_add(payload):
