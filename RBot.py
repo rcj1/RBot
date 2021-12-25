@@ -258,9 +258,8 @@ async def inspirobot(ctx):
 
 @bot.command()
 async def deactivate(ctx):
-  current_server = ctx.message.guild
-  ctx.send(current_server)
-  print(current_server  )
+  current_server = ctx.message.guild.id
+  await ctx.send(current_server)
   comm_to_deactivate = ctx.message.content.split()[1]
   if comm_to_deactivate not in non_admin_commands:
     await ctx.send("Sorry you cannot deactivate this command.")
@@ -269,7 +268,7 @@ async def deactivate(ctx):
   conn = await asyncpg.connect(database_url)
   await conn.execute('UPDATE servers SET forbidden=$2 WHERE id=$1', current_server, array_append(forbidden, comm_to_deactivate))
   await conn.close()
-  
+
 @bot.event
 async def on_raw_reaction_add(payload):
   Connect4State = find_game_c4(payload)
