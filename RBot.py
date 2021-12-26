@@ -266,7 +266,7 @@ async def deactivate(ctx):
     return
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
-  new = await conn.execute('SELECT $1::varchar(30)',conn_to_deactivate)
+  new = await conn.execute('SELECT $1::varchar(30)',comm_to_deactivate)
   ctx.send(new)
   print(new)
   await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(excluded.forbidden::varchar(30)[], $2::varchar(30))', current_server, comm_to_deactivate)
