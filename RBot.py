@@ -266,7 +266,7 @@ async def deactivate(ctx):
     return
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
-  await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(excluded.forbidden, $2::text)', current_server, comm_to_deactivate)
+  await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(servers.forbidden, $3)', current_server, [comm_to_deactivate], comm_to_deactivate)
   await conn.close()
 
 @bot.event
