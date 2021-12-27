@@ -1,4 +1,4 @@
-import discord, os, random, datetime, asyncio, requests, io, aiohttp, asyncpg 
+import discord, os, random, datetime, asyncio, requests, io, aiohttp, asyncpg, DiscordUtils
 from discord.ext import commands
 intents = discord.Intents.default()
 intents.members = True
@@ -185,13 +185,21 @@ async def on_message(message):
 bot.remove_command("help")
 @bot.command()
 async def help(ctx):
-  embedVar = discord.Embed(title="Hi, I'm RBot and I do a few fun things in Discord.")
-  embedVar.add_field(name="Number Game", value="Find out who is the fastest at math! Type .numbers to start.", inline=False)
-  embedVar.add_field(name="Message Completer", value="Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.", inline=False)
-  embedVar.add_field(name="Connect 4", value="Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.", inline=False)
-  embedVar.add_field(name="Inspirobot", value="Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.", inline=False)
-  await ctx.send(embed=embedVar)
- 
+  embed1 = discord.Embed(title="Hi, I'm RBot and I do a few fun things in Discord.")
+  embed1.add_field(name="Number Game", value="Find out who is the fastest at math! Type .numbers to start.", inline=False)
+  embed1.add_field(name="Message Completer", value="Type .complete followed by the beginning of a sentence, and have DeepAI complete the sentence.", inline=False)
+  embed1.add_field(name="Connect 4", value="Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.", inline=False)
+  embed1.add_field(name="Inspirobot", value="Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.", inline=False)
+  embed2 = discord.Embed(title="Admin functions")
+  embed2.add_field(name="Deactivate", value="Example: type .deactivate connect4 to deactivate the connect4 command", inline=False)
+  embed2.add_field(name="Activate", value="Example: type .activate connect4 to reactivate the connect4 command", inline=False)
+  paginator = DiscordUtils.Pagination.CustomEmbedPaginator(ctx, remove_reactions = True)
+  paginator.add_reaction('⏪', "back")
+  paginator.add_reaction('🔐', "lock")
+  paginator.add_reaction('⏩', "next")
+  embeds = [embed1, embed2]
+  await paginator.run(embeds) 
+  
 @bot.command()
 async def numbers(ctx):
   if await activated(ctx, 'numbers'):
@@ -285,11 +293,9 @@ async def activated(ctx, command):
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
-  print(row['forbidden'], ctx.message.content.split()[0][1:], 'debugging')
   if command in row['forbidden']:
     return False
-  else:
-    return True
+  return True
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -298,6 +304,7 @@ async def deactivate(ctx):
   if conn:
     await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(servers.forbidden, $3)', current_server, [comm_to_modify], comm_to_modify)
     await conn.close()
+    await ctx.send(f"{comm_to_modify} is deactivated.")
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -307,6 +314,7 @@ async def activate(ctx):
     await conn.execute('UPDATE servers SET forbidden = array_remove(forbidden, $1) WHERE id = $2', comm_to_modify, current_server)
     await conn.execute("DELETE FROM servers WHERE forbidden = '{}'")
     await conn.close()
+    await ctx.send(f"{comm_to_modify} is activated.")
 
 @bot.event
 async def on_command_error(ctx, error):
