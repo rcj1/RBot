@@ -294,7 +294,7 @@ async def activate(ctx):
 @deactivate.error
 await admin_error(ctx, error)
 
-@activate.admin_error
+@activate.error
 await admin_error(ctx, error)
 
 async def admin_error(ctx, error):
