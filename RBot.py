@@ -291,7 +291,7 @@ async def activate(ctx):
     await conn.execute("DELETE FROM servers WHERE forbidden = '{}'")
     await conn.close()
 
-@client.event
+@bot.event
 async def on_command_error(ctx, error):
   if isinstance(error, commands.MissingPermissions):
     await ctx.send("You are missing permission(s) to run this command.")
