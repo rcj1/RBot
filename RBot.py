@@ -275,7 +275,8 @@ async def activated(ctx):
   if ctx.message.content.split()[0] in row['forbidden']:
     raise commands.errors.CommandNotFound
     return False
-  return True
+  else:
+    return True
 
 @bot.command()
 @commands.has_permissions(administrator=True)
