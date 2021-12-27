@@ -194,59 +194,71 @@ async def help(ctx):
  
 @bot.command()
 async def numbers(ctx):
-  NumGameState = new_num_game(ctx.message.channel)
-  await ctx.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
-  await NumGameState.send_numgame(ctx.message.channel)
+  if await activated(ctx, 'numbers'):
+    NumGameState = new_num_game(ctx.message.channel)
+    await ctx.send("Starting numbers game!\nTo answer, type .n followed by your answer.")
+    await NumGameState.send_numgame(ctx.message.channel)
+  else:
+    raise commands.CommandNotFound
 
 @bot.command()
 async def n(ctx):
-  NumGameState = find_num_game(ctx.message.channel)
-  if NumGameState:
-    time_delta = datetime.datetime.now() - NumGameState.get_last_time() # Calculating score
-    secs = time_delta.total_seconds()
-    try: 
-      answer = int(ctx.message.content.split()[1])
-    except (ValueError, IndexError):
-      await ctx.send("Please enter .n followed by a numerical answer (only digits please).")
-    else:
-      score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
-      NumGameState.add_leader(ctx.message.author.mention, score)
+  if await activated(ctx, 'numbers'):
+    NumGameState = find_num_game(ctx.message.channel)
+    if NumGameState:
+      time_delta = datetime.datetime.now() - NumGameState.get_last_time() # Calculating score
+      secs = time_delta.total_seconds()
+      try: 
+        answer = int(ctx.message.content.split()[1])
+      except (ValueError, IndexError):
+        await ctx.send("Please enter .n followed by a numerical answer (only digits please).")
+      else:
+        score = 100/secs if answer == NumGameState.get_correct()[-1] else 0
+        NumGameState.add_leader(ctx.message.author.mention, score)
+  else:
+    raise commands.CommandNotFound
 
 @bot.command()
 async def complete(ctx):
-  try:
-    raw = requests.post("https://api.deepai.org/api/text-generator",
-    data={
-      'text': " ".join(ctx.message.content.split()[1:]),
-    },
-    headers={'Api-Key': os.getenv('TOKEN2')})
-    processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
-  except (IndexError, AttributeError, KeyError):
-    processed = "Please enter .complete followed by a word or sequence of words."
-  finally:
-    await ctx.send(processed)
+  if await activated(ctx, 'complete'):
+    try:
+      raw = requests.post("https://api.deepai.org/api/text-generator",
+      data={
+        'text': " ".join(ctx.message.content.split()[1:]),
+      },
+      headers={'Api-Key': os.getenv('TOKEN2')})
+      processed = raw.json()["output"].split('.')[0] + '.' #Get the response and stop when you find a period
+    except (IndexError, AttributeError, KeyError):
+      processed = "Please enter .complete followed by a word or sequence of words."
+    finally:
+      await ctx.send(processed)
+  else:
+    raise commands.CommandNotFound
 
 @bot.command()
 async def connect4(ctx): #initializing connect 4 state
-  auth_mention = add_excl(ctx.message.author.mention)
-  try:
-    other_player = ctx.message.content.split()[1]
-    if other_player == auth_mention or not ctx.message.guild.get_member(int(other_player[3:-1])):
-      raise MemberError
-    Connect4State = new_game_c4()
-    Connect4State.setup(auth_mention, other_player)
-    msg = Connect4State.send_c4_board()
-    boardID = await ctx.send(msg)
-    Connect4State.set_boardID(boardID)
-    for emoji in Connect4State.get_emojis():
-      await Connect4State.get_boardID().add_reaction(emoji)
-  except (IndexError, MemberError, ValueError):
-    await ctx.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+  if await activated(ctx, 'connect4'):
+    auth_mention = add_excl(ctx.message.author.mention)
+    try:
+      other_player = ctx.message.content.split()[1]
+      if other_player == auth_mention or not ctx.message.guild.get_member(int(other_player[3:-1])):
+        raise MemberError
+      Connect4State = new_game_c4()
+      Connect4State.setup(auth_mention, other_player)
+      msg = Connect4State.send_c4_board()
+      boardID = await ctx.send(msg)
+      Connect4State.set_boardID(boardID)
+      for emoji in Connect4State.get_emojis():
+        await Connect4State.get_boardID().add_reaction(emoji)
+    except (IndexError, MemberError, ValueError):
+      await ctx.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
+  else:
+    raise commands.CommandNotFound
 # #----------------------- INSPIROBOT ----------------------------------------------  
 
 @bot.command()
 async def inspirobot(ctx):
-  if await activated(ctx):
+  if await activated(ctx, 'inspirobot'):
     link = "https://inspirobot.me/api?generate=true"
     f = requests.get(link)
     imgurl=f.text
@@ -269,12 +281,12 @@ async def admin_stuff(ctx):
   conn = await asyncpg.connect(database_url)
   return conn, comm_to_modify, current_server 
 
-async def activated(ctx):
+async def activated(ctx, command):
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
   print(row['forbidden'], ctx.message.content.split()[0][1:], 'debugging')
-  if ctx.message.content.split()[0] in row['forbidden']:
+  if command in row['forbidden']:
     return False
   else:
     return True
