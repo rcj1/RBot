@@ -246,6 +246,7 @@ async def connect4(ctx): #initializing connect 4 state
 
 @bot.command()
 async def inspirobot(ctx):
+  if activated(ctx):
     link = "https://inspirobot.me/api?generate=true"
     f = requests.get(link)
     imgurl=f.text
@@ -271,7 +272,7 @@ async def activated(ctx):
   conn = await asyncpg.connect(database_url)
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
   if ctx.message.content.split()[0] in row.forbidden:
-    return False
+    raise commands.errors.CommandNotFound
   return True
 
 @bot.command()
@@ -296,7 +297,7 @@ async def on_command_error(ctx, error):
   if isinstance(error, commands.MissingPermissions):
     await ctx.send("You are missing permission(s) to run this command.")
   elif isinstance(error, commands.CommandNotFound):
-    await ctx.send("Either the command does not exist or it has been deactivated.")
+    await ctx.send("The command does not exist.")
   else:
     raise Exception
 
