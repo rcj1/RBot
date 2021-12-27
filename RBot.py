@@ -246,7 +246,7 @@ async def connect4(ctx): #initializing connect 4 state
 
 @bot.command()
 async def inspirobot(ctx):
-  if activated(ctx):
+  if await activated(ctx):
     link = "https://inspirobot.me/api?generate=true"
     f = requests.get(link)
     imgurl=f.text
