@@ -291,6 +291,17 @@ async def activate(ctx):
     await conn.execute("DELETE FROM servers WHERE forbidden = '{}'")
     await conn.close()
 
+@deactivate.error
+await admin_error(ctx, error)
+
+@activate.admin_error
+await admin_error(ctx, error)
+
+async def admin_error(ctx, error):
+  if isinstance(error, commands.MissingPermissions):
+      await ctx.send("You don't have permission to activate/deactivate commands.")
+
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
