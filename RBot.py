@@ -275,7 +275,7 @@ async def activated(ctx):
   return True
 
 @bot.command()
-@has_permissions(administrator=True)
+@commands.has_permissions(administrator=True)
 async def deactivate(ctx):
   conn, comm_to_modify, current_server = admin_stuff(ctx)
   if conn:
@@ -283,7 +283,7 @@ async def deactivate(ctx):
     await conn.close()
 
 @bot.command()
-@has_permissions(administrator=True)
+@commands.has_permissions(administrator=True)
 async def activate(ctx):
   conn, comm_to_modify, current_server = admin_stuff(ctx)
   if conn:
