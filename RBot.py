@@ -256,6 +256,8 @@ async def inspirobot(ctx):
             return await ctx.send('Could not download file...')
         data = io.BytesIO(await resp.read())
         await ctx.send(file=discord.File(data, 'cool_image.png'))
+  else:
+    raise commands.CommandNotFound
 
 async def admin_stuff(ctx):
   current_server = ctx.message.guild.id
@@ -271,7 +273,7 @@ async def activated(ctx):
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
-  print(row['forbidden'], ctx.message.content.split()[0], 'debugging')
+  print(row['forbidden'], ctx.message.content.split()[0][1:], 'debugging')
   if ctx.message.content.split()[0] in row['forbidden']:
     return False
   else:
@@ -299,7 +301,7 @@ async def on_command_error(ctx, error):
   if isinstance(error, commands.MissingPermissions):
     await ctx.send("You are missing permission(s) to run this command.")
   elif isinstance(error, commands.CommandNotFound):
-    await ctx.send("The command does not exist.")
+    await ctx.send("The command does not exist or has been deactivated.")
   else:
     raise error
 
