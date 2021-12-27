@@ -299,7 +299,7 @@ async def on_command_error(ctx, error):
   elif isinstance(error, commands.CommandNotFound):
     await ctx.send("The command does not exist.")
   else:
-    raise Exception
+    raise error
 
 @bot.event
 async def on_raw_reaction_add(payload):
