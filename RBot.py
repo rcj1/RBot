@@ -288,7 +288,7 @@ async def activate(ctx):
   conn, comm_to_modify, current_server = admin_stuff(ctx)
   if conn:
     await conn.execute('UPDATE servers SET forbidden = array_remove(forbidden, $1) WHERE id = $2', comm_to_modify, current_server)
-    await conn.execute('DELETE FROM servers WHERE forbidden = '{}'')
+    await conn.execute("DELETE FROM servers WHERE forbidden = '{}'")
     await conn.close()
 
 
