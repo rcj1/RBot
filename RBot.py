@@ -256,18 +256,41 @@ async def inspirobot(ctx):
         data = io.BytesIO(await resp.read())
         await ctx.send(file=discord.File(data, 'cool_image.png'))
 
-@bot.command()
-async def deactivate(ctx):
+async def admin_stuff(ctx):
   current_server = ctx.message.guild.id
-  await ctx.send(current_server)
-  comm_to_deactivate = ctx.message.content.split()[1]
-  if comm_to_deactivate not in non_admin_commands:
-    await ctx.send("Sorry you cannot deactivate this command.")
-    return
+  comm_to_modify = ctx.message.content.split()[1]
+  if comm_to_modify not in non_admin_commands:
+    await ctx.send("Sorry this command does not exist.")
+    return None, comm_to_modify, current_server
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
-  await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(servers.forbidden, $3)', current_server, [comm_to_deactivate], comm_to_deactivate)
-  await conn.close()
+  return conn, comm_to_modify, current_server 
+
+def activated(ctx):
+  database_url = os.environ.get('DATABASE_URL', None)
+  conn = await asyncpg.connect(database_url)
+  row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
+  if ctx.message.content.split()[0] in row.forbidden:
+    return False
+  return True
+
+@bot.command()
+@has_permissions(administrator=True)
+async def deactivate(ctx):
+  conn, comm_to_modify, current_server = admin_stuff(ctx)
+  if conn:
+    await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(servers.forbidden, $3)', current_server, [comm_to_modify], comm_to_modify)
+    await conn.close()
+
+@bot.command()
+@has_permissions(administrator=True)
+async def activate(ctx):
+  conn, comm_to_modify, current_server = admin_stuff(ctx)
+  if conn:
+    await conn.execute('UPDATE servers SET forbidden = array_remove(forbidden, $1) WHERE id = $2', comm_to_modify, current_server)
+    await conn.execute('DELETE FROM servers WHERE forbidden = '{}'')
+    await conn.close()
+
 
 @bot.event
 async def on_raw_reaction_add(payload):
