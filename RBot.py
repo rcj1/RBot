@@ -271,7 +271,7 @@ async def activated(ctx):
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
-  if ctx.message.content.split()[0] in row.forbidden:
+  if ctx.message.content.split()[0] in row['forbidden']:
     raise commands.errors.CommandNotFound
   return True
 
