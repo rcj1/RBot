@@ -277,7 +277,7 @@ async def activated(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def deactivate(ctx):
-  conn, comm_to_modify, current_server = admin_stuff(ctx)
+  conn, comm_to_modify, current_server = await admin_stuff(ctx)
   if conn:
     await conn.execute('INSERT INTO servers(id, forbidden) VALUES($1, $2) ON CONFLICT (id) DO UPDATE SET forbidden = array_append(servers.forbidden, $3)', current_server, [comm_to_modify], comm_to_modify)
     await conn.close()
@@ -285,7 +285,7 @@ async def deactivate(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def activate(ctx):
-  conn, comm_to_modify, current_server = admin_stuff(ctx)
+  conn, comm_to_modify, current_server = await admin_stuff(ctx)
   if conn:
     await conn.execute('UPDATE servers SET forbidden = array_remove(forbidden, $1) WHERE id = $2', comm_to_modify, current_server)
     await conn.execute("DELETE FROM servers WHERE forbidden = '{}'")
