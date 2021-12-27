@@ -199,7 +199,7 @@ async def help(ctx):
   paginator.add_reaction('⏩', "next")
   embeds = [embed1, embed2]
   await paginator.run(embeds) 
-  
+
 @bot.command()
 async def numbers(ctx):
   if await activated(ctx, 'numbers'):
@@ -262,7 +262,6 @@ async def connect4(ctx): #initializing connect 4 state
       await ctx.send("Please type .connect4 followed by a space, and then mention someone else to start a game")
   else:
     raise commands.CommandNotFound
-# #----------------------- INSPIROBOT ----------------------------------------------  
 
 @bot.command()
 async def inspirobot(ctx):
@@ -293,9 +292,9 @@ async def activated(ctx, command):
   database_url = os.environ.get('DATABASE_URL', None)
   conn = await asyncpg.connect(database_url)
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
-  if command in row['forbidden']:
-    return False
-  return True
+  if (not row) or command not in row['forbidden']:
+    return True
+  return False
 
 @bot.command()
 @commands.has_permissions(administrator=True)
