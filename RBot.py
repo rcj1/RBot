@@ -247,6 +247,7 @@ async def connect4(ctx): #initializing connect 4 state
 @bot.command()
 async def inspirobot(ctx):
   if await activated(ctx):
+    print(await activated(ctx))
     link = "https://inspirobot.me/api?generate=true"
     f = requests.get(link)
     imgurl=f.text
@@ -273,6 +274,7 @@ async def activated(ctx):
   row = await conn.fetchrow('SELECT * FROM servers WHERE id = $1', ctx.message.guild.id)
   if ctx.message.content.split()[0] in row['forbidden']:
     raise commands.errors.CommandNotFound
+    return False
   return True
 
 @bot.command()
