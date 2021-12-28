@@ -46,7 +46,7 @@ class NumbersGame:
       await channel.send(msg)
       self._last_time = datetime.datetime.now()
       self.add_correct(correct_ans)
-      await asyncio.sleep(15)
+      await asyncio.sleep(8)
       leader_new = self._leaderboard.copy()
       if leader_new == leader_old:
     
