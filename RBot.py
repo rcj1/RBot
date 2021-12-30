@@ -280,10 +280,10 @@ async def inspirobot(ctx):
 
 @bot.command()
 async def servers(ctx):
-  servers = list(bot.guilds)
-  await ctx.send(f"Connected on {str(len(servers))} servers:")
+  guilds = list(bot.guilds)
+  await ctx.send(f"Connected on {str(len(guilds))} servers:")
   await ctx.send('\n'.join(guild.name for guild in guilds))
-  
+
 async def admin_stuff(ctx):
   current_server = ctx.message.guild.id
   comm_to_modify = ctx.message.content.split()[1]
