@@ -281,8 +281,9 @@ async def inspirobot(ctx):
 @bot.command()
 async def servers(ctx):
   guilds = list(bot.guilds)
-  await ctx.send(f"Connected on {str(len(guilds))} servers:")
-  await ctx.send('\n'.join(guild.name for guild in guilds))
+  print(f"Connected on {str(len(guilds))} servers:")
+  print('\n'.join(guild.name for guild in guilds))
+  await ctx.send("info sent")
 
 async def admin_stuff(ctx):
   current_server = ctx.message.guild.id
