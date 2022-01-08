@@ -88,6 +88,7 @@ class Connect4: #standard for working with users: use the one with @!
     self._board = [[],[],[],[],[],[],[]]
     self._emojis =['1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣']
     self._win_dict = {"red": [], "yellow": []}
+    self._start_time = datetime.datetime.now()
 
   def __init__(self):
     self.setup('', '')
@@ -132,6 +133,10 @@ class Connect4: #standard for working with users: use the one with @!
     # For example, if all the tuples (x, y) (x, y+1) (x, y+2) (x, y+3) are in the winning dict, that is a vertical win.
     # There are four such statements for the four possible win situations. 
     # These are connected with any() so that if any one is true, you return the color that won.
+    time_delta = datetime.datetime.now() - self._start_time
+    time_delta_s = time_delta.total_seconds()
+    if time_delta_s > 480:
+      return None
     for color in ["red", "yellow"]:
       for x in range(7):
         for y in range(6):
