@@ -10,9 +10,10 @@ Type .complete followed by the beginning of a sentence, and have DeepAI complete
 Type .connect4 followed by a mention of someone else to start a connect 4 game with the other person.
 #### Inspirobot
 Type .inspirobot to get an artificially intelligent inspirational quote from Inspirobot.
-
+#### Admin Commands
+Admins can disable and re-enable specific commands.
 ### Code
 This bot is written in Python and hosted on Heroku.
 
 ### What's next?
-The ability for admins to disable selected features.
+Code refactoring.
