@@ -12,6 +12,7 @@ class NumbersGame:
     self._leaderboard = {}
     self._last_time = 0
     self._channel = channel
+    self._num_ans = 0 # keeps track of how many responses were given, for the timeout
 
   def __init__(self, channel):
     self.setup(channel)
@@ -21,6 +22,7 @@ class NumbersGame:
 
   def add_leader(self, key, value):
     self._leaderboard[key] = value if key not in self._leaderboard else value + self._leaderboard[key]
+    self._num_ans += 1
 
   async def create_numgame_msg(self, channel):
     msg = "The scores are...\n"
@@ -31,7 +33,7 @@ class NumbersGame:
 
   async def send_numgame(self, channel):
     for i in range(10):
-      leader_old = self._leaderboard.copy()
+      num_old = self._num_ans
       coinToss = random.randrange(2)
       if coinToss == 0:
         rand1 = random.randrange(1, 200)
@@ -47,8 +49,8 @@ class NumbersGame:
       self._last_time = datetime.datetime.now()
       self.add_correct(correct_ans)
       await asyncio.sleep(12)
-      leader_new = self._leaderboard.copy()
-      if leader_new == leader_old:
+      num_new = self._num_ans
+      if num_new == num_old:
     
         await channel.send("Timing out because nobody responded...")
         break
